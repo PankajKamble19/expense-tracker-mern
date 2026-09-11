@@ -1,0 +1,21 @@
+node_modules/
+
+coverage/
+uploads/
+
+
+
+# Environment variables
+.env
+.env.local
+
+# Build files
+dist/
+build/
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
