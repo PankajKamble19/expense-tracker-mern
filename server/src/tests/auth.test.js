@@ -1,6 +1,7 @@
 import request from 'supertest';
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
+import { jest } from '@jest/globals';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import app from '../app.js';
 import User from '../models/User.js';
@@ -102,6 +103,61 @@ describe('Auth API', () => {
   it('rejects protected endpoint without token', async () => {
     const res = await request(app).get('/api/auth/me');
     expect(res.statusCode).toBe(401);
+  });
+
+  it('changes a user password when current password is correct', async () => {
+    const registerRes = await request(app).post('/api/auth/register').send({
+      name: 'Password User',
+      email: 'pw@example.com',
+      password: 'password123',
+      confirmPassword: 'password123',
+      preferredCurrency: 'INR',
+    });
+
+    const token = registerRes.body.data.token;
+
+    const res = await request(app)
+      .post('/api/auth/change-password')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        currentPassword: 'password123',
+        newPassword: 'newPassword456',
+        confirmPassword: 'newPassword456',
+      });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.success).toBe(true);
+
+    const loginRes = await request(app).post('/api/auth/login').send({
+      email: 'pw@example.com',
+      password: 'newPassword456',
+    });
+
+    expect(loginRes.statusCode).toBe(200);
+  });
+
+  it('rejects a password change when the current password is wrong', async () => {
+    const registerRes = await request(app).post('/api/auth/register').send({
+      name: 'Wrong Password User',
+      email: 'wrongpw@example.com',
+      password: 'password123',
+      confirmPassword: 'password123',
+      preferredCurrency: 'INR',
+    });
+
+    const token = registerRes.body.data.token;
+
+    const res = await request(app)
+      .post('/api/auth/change-password')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        currentPassword: 'wrongpass',
+        newPassword: 'newPassword456',
+        confirmPassword: 'newPassword456',
+      });
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body.success).toBe(false);
   });
 });
 

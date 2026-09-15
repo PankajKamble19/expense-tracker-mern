@@ -9,7 +9,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(__dirname, '..');
 const jestBin = path.join(projectRoot, 'node_modules', 'jest', 'bin', 'jest.js');
 
-const args = [jestBin];
+const args = ['--experimental-vm-modules', jestBin];
 const extraArgs = process.argv.slice(2);
 
 if (extraArgs.length > 0) {

@@ -38,15 +38,16 @@ export default function TransactionForm({ accounts = [], categories = [], initia
   const submit = async (e) => {
     e.preventDefault();
     setError('');
-    if (!form.amount || Number(form.amount) <= 0) return setError('Enter an amount greater than zero.');
+    const amountValue = Number(form.amount);
+    if (form.amount === '' || !Number.isFinite(amountValue) || amountValue <= 0) return setError('Enter an amount greater than zero.');
     if (!form.category) return setError('Select a category.');
     if (!form.account) return setError('Select an account.');
-    try { await onSubmit?.({ ...form, amount: Number(form.amount) }); }
+    try { await onSubmit?.({ ...form, amount: amountValue }); }
     catch (err) { setError(err?.message || 'Could not save transaction.'); }
   };
 
   return (
-    <form onSubmit={submit} className="space-y-5">
+    <form noValidate onSubmit={submit} className="space-y-5">
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="block"><span className="mb-2 block text-sm font-medium text-slate-700">Amount</span><input aria-label="Amount" type="number" min="0.01" step="0.01" value={form.amount} onChange={(e) => change('amount', e.target.value)} className="field" placeholder="0.00" /></label>
         <label className="block"><span className="mb-2 block text-sm font-medium text-slate-700">Type</span><select aria-label="Type" value={form.type} onChange={(e) => change('type', e.target.value)} className="field"><option>Expense</option><option>Income</option></select></label>

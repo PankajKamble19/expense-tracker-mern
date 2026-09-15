@@ -63,6 +63,7 @@ export default function TransactionsPage() {
     setSaving(true);
     try {
       const { attachmentFile, ...transactionPayload } = payload;
+      if (!transactionPayload.attachment) delete transactionPayload.attachment;
       if (attachmentFile) {
         const body = new FormData();
         body.append('file', attachmentFile);

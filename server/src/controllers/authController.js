@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
-import { registerSchema, loginSchema } from '../validators/authValidators.js';
+import { registerSchema, loginSchema, changePasswordSchema } from '../validators/authValidators.js';
 import { sendSuccess, sendError } from '../utils/apiResponse.js';
 import { env } from '../config/env.js';
 import { seedDefaultDataForUser } from '../services/defaultDataService.js';
@@ -95,4 +95,38 @@ export const logout = async (req, res) => {
 export const getCurrentUser = async (req, res) => {
   const safeUser = { ...req.user.toObject(), passwordHash: undefined };
   return sendSuccess(res, 'User loaded', { user: safeUser });
+};
+
+export const changePassword = async (req, res, next) => {
+  try {
+    const parsed = changePasswordSchema.safeParse(req.body);
+
+    if (!parsed.success) {
+      const errors = parsed.error.flatten().fieldErrors;
+      return sendError(res, 'Validation failed', 400, errors);
+    }
+
+    const { currentPassword, newPassword } = parsed.data;
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      return sendError(res, 'User not found', 404);
+    }
+
+    const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!isCurrentPasswordValid) {
+      return sendError(res, 'Current password is incorrect', 400);
+    }
+
+    if (currentPassword === newPassword) {
+      return sendError(res, 'New password must be different from the current password', 400);
+    }
+
+    user.passwordHash = await bcrypt.hash(newPassword, 10);
+    await user.save();
+
+    return sendSuccess(res, 'Password changed successfully');
+  } catch (error) {
+    next(error);
+  }
 };
